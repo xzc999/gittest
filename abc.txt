@@ -4,7 +4,5 @@ remote 222222
 remote 333333
 locale 111111
 locale 222222
-222222 locale
-locale 222222
 locale 333333
 
