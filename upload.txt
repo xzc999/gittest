@@ -1,0 +1,64 @@
+<template>
+  <div>
+    <div v-for="item in items" :key="item.id" class="item">
+      <h3>{{ item.name }}</h3>
+      <el-upload :before-upload="(file) => handleBeforeUpload(file, item)"
+        :on-success="(response) => handleSuccess(response, item)" :show-file-list="false">
+        <el-button>选择文件</el-button>
+      </el-upload>
+      <p v-if="item.imageName">已选择图片: {{ item.imageName }}</p>
+    </div>
+  </div>
+</template>
+
+<script>
+import axios from 'axios';
+
+export default {
+  data() {
+    return {
+      items: [
+        { id: 1, name: '项 1', imageName: '', base64Image: '' },
+        { id: 2, name: '项 2', imageName: '', base64Image: '' },
+        { id: 3, name: '项 3', imageName: '', base64Image: '' },
+        { id: 4, name: '项 4', imageName: '', base64Image: '' },
+        { id: 5, name: '项 5', imageName: '', base64Image: '' },
+      ]
+    };
+  },
+  methods: {
+    handleBeforeUpload(file, item) {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64String = event.target.result;
+        item.imageName = file.name; // 获取文件名
+        item.base64Image = base64String; // 存储 Base64 数据
+        console.log(`ID: ${item.id}, 图片名称: ${file.name}, Base64: ${base64String}`);
+
+        // 直接在这里上传图片
+        try {
+          const response = await axios.post('/your-upload-url', {
+            id: item.id,
+            image: base64String
+          });
+          this.handleSuccess(response, item);
+        } catch (error) {
+          console.error('上传失败:', error);
+        }
+      };
+      reader.readAsDataURL(file);
+      return false; // 阻止默认上传行为
+    },
+    handleSuccess(response, item) {
+      console.log('上传成功:', response);
+      // 这里可以处理上传成功后的逻辑
+    }
+  }
+};
+</script>
+
+<style scoped>
+.item {
+  margin-bottom: 20px;
+}
+</style>

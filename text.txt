@@ -1,0 +1,139 @@
+<template>
+  <div>
+    <el-button type="primary" @click="openDialog">打开弹框</el-button>
+
+    <el-dialog v-model="dialogVisible" title="收集信息" @close="resetForm">
+      <el-form :model="form" ref="formRef">
+        <el-form-item label="中文名" prop="nameCn" required>
+          <el-input v-model="form.nameCn" placeholder="请输入中文名"></el-input>
+        </el-form-item>
+        <el-form-item label="英文名" prop="nameEn" required>
+          <el-input v-model="form.nameEn" placeholder="请输入英文名"></el-input>
+        </el-form-item>
+        <el-form-item label="图标" required>
+          <el-upload class="upload-demo" :show-file-list="false" :before-upload="beforeUpload" :on-change="handleChange"
+            :limit="1">
+            <el-button size="small" type="primary">选择图标</el-button>
+          </el-upload>
+          <div v-if="uploadedFileName">{{ uploadedFileName }}</div>
+        </el-form-item>
+        <el-form-item label="URL" prop="url" required>
+          <el-input v-model="form.url" placeholder="请输入URL"></el-input>
+        </el-form-item>
+        <el-form-item label="打开方式" prop="openType" required>
+          <el-select v-model="form.openType" placeholder="选择打开方式">
+            <el-option label="新窗口" value="new"></el-option>
+            <el-option label="当前窗口" value="current"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="排序ID" prop="sortId" required>
+          <el-input type="number" v-model="form.sortId" placeholder="请输入排序ID"></el-input>
+        </el-form-item>
+      </el-form>
+      <span slot="footer" class="dialog-footer">
+        <div class="button-group">
+          <el-button @click="resetForm">取 消</el-button>
+          <el-button type="primary" @click="submitForm">确 定</el-button>
+        </div>
+      </span>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import axios from 'axios';
+import { ElMessage } from 'element-plus';
+
+const dialogVisible = ref(false);
+const form = ref({
+  nameCn: '',
+  nameEn: '',
+  iconPicture: '',
+  url: '',
+  openType: '',
+  sortId: null,
+  fileName: '', // 新增字段用于存储文件名
+});
+const uploadedFileName = ref('');
+const selectedFile = ref(null); // 用于存储选择的文件
+
+const openDialog = () => {
+  dialogVisible.value = true;
+};
+
+const resetForm = () => {
+  form.value = {
+    nameCn: '',
+    nameEn: '',
+    iconPicture: '',
+    url: '',
+    openType: '',
+    sortId: null,
+    fileName: '', // 重置文件名
+  };
+  uploadedFileName.value = '';
+  selectedFile.value = null; // 清空选择的文件
+  dialogVisible.value = false;
+};
+
+const beforeUpload = (file) => {
+  const isImage = file.type.startsWith('image/');
+  if (!isImage) {
+    ElMessage.error('上传文件必须是图片!');
+  }
+  return isImage;
+};
+
+const handleChange = (file) => {
+  selectedFile.value = file.raw; // 保存选择的文件
+  uploadedFileName.value = file.name; // 显示文件名称
+  form.value.fileName = file.name; // 将文件名存储到表单中
+};
+
+const submitForm = async () => {
+  try {
+    // 验证所有必填字段是否填写
+    if (!form.value.nameCn || !form.value.nameEn || !uploadedFileName.value || !form.value.url || !form.value.openType || form.value.sortId === null) {
+      ElMessage.error('请确保所有字段都已填写');
+      return;
+    }
+
+    // 如果所有字段都已填写，继续上传
+    if (selectedFile.value) {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        form.value.iconPicture = e.target.result; // base64
+        console.log(form.value);
+        await axios.post('你的后端接口地址', form.value); // 发送包含文件名的表单数据
+        resetForm();
+        ElMessage.success('提交成功');
+      };
+      reader.readAsDataURL(selectedFile.value); // 读取文件为 base64
+    } else {
+      ElMessage.error('请先选择图标文件');
+    }
+  } catch (error) {
+    ElMessage.error('提交失败');
+  }
+};
+</script>
+
+<style scoped>
+.upload-demo i {
+  font-size: 28px;
+  color: #409EFF;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  /* 右对齐 */
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  /* 按钮之间的间距 */
+}
+</style>
